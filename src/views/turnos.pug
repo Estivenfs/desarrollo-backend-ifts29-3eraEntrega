@@ -242,39 +242,57 @@ html(lang='es')
       nav
         a(href='/' title='Inicio')
           i.fas.fa-house
-        a(href='/pacientes' title='Pacientes')
-          i.fas.fa-user-injured
-        a(href='/medicos' title='Médicos')
-          i.fas.fa-user-md
-        a(href='/turnos' title='Turnos')
-          i.fas.fa-calendar-check
+        if !user || user.role === 'Administrativo'
+          a(href='/pacientes' title='Pacientes')
+            i.fas.fa-user-injured
+          a(href='/medicos' title='Médicos')
+            i.fas.fa-user-md
+          a(href='/turnos' title='Turnos')
+            i.fas.fa-calendar-check
+        else if user && user.role === 'Medico'
+          a(href='/pacientes' title='Pacientes')
+            i.fas.fa-user-injured
+        else if user && user.role === 'Paciente'
+          a(href='/turnos' title='Turnos')
+            i.fas.fa-calendar-check
 
     .main
       .container
-        // --- Cabecera con ícono ---
         .header-left
           i.fas.fa-calendar-check
-          div
-            h1.page-title Gestión de Turnos
-            p.page-sub Desarrollo Backend - Grupo 4
+          h1.page-title Gestión de Turnos
+          p.page-sub Desarrollo Backend - Grupo 4
+          if user
+            p.page-sub Bienvenido, #{user.username} · Rol: #{user.role}
+            a(href='#', onclick='logout()') Cerrar sesión
+          else
+            a(href='/login') Iniciar sesión
+
+        // Cabecera duplicada eliminada
         
         // --- Contenido de la página de Turnos con íconos ---
         .actions
-          a.action-button.create(href='#' onclick='showForm("create")')
-            i.icon.fas.fa-plus-circle
-            | Crear Turno
-          
-          a.action-button.read(href='#' onclick='showForm("read")')
-            i.icon.fas.fa-search
-            | Consultar Turnos
-          
-          a.action-button.update(href='#' onclick='showForm("update")')
-            i.icon.fas.fa-edit
-            | Modificar Turno
-          
-          a.action-button.delete(href='#' onclick='showForm("delete")')
-            i.icon.fas.fa-trash-alt
-            | Eliminar Turno
+          if !user || user.role === 'Administrativo'
+            a.action-button.create(href='#' onclick='showForm("create")')
+              i.icon.fas.fa-plus-circle
+              | Crear Turno
+            a.action-button.read(href='#' onclick='showForm("read")')
+              i.icon.fas.fa-search
+              | Consultar Turnos
+            a.action-button.update(href='#' onclick='showForm("update")')
+              i.icon.fas.fa-edit
+              | Modificar Turno
+            a.action-button.delete(href='#' onclick='showForm("delete")')
+              i.icon.fas.fa-trash-alt
+              | Eliminar Turno
+          else if user && user.role === 'Medico'
+            a.action-button.read(href='#' onclick='showForm("read")')
+              i.icon.fas.fa-search
+              | Consultar Turnos
+          else if user && user.role === 'Paciente'
+            a.action-button.read(href='#' onclick='showForm("read")')
+              i.icon.fas.fa-search
+              | Mis Turnos
       
         // Formulario Crear Turno
         .form-section#create-form
@@ -313,16 +331,19 @@ html(lang='es')
             label(for='searchFecha') Buscar por Fecha:
             input(type='date' id='searchFecha' name='searchFecha')
             button.submit-button(onclick='getTurnosByFecha()') Buscar
-          .form-group(style='margin-top: 20px;')
-            label(for='searchPaciente') Buscar por Paciente:
-            select(id='searchPaciente' name='searchPaciente')
-              option(value='') Seleccionar paciente...
-            button.submit-button(onclick='getTurnosByPaciente()') Buscar
-          .form-group(style='margin-top: 20px;')
-            label(for='searchMedico') Buscar por Médico:
-            select(id='searchMedico' name='searchMedico')
-              option(value='') Seleccionar médico...
-            button.submit-button(onclick='getTurnosByMedico()') Buscar
+          if !user || user.role !== 'Paciente'
+            .form-group(style='margin-top: 20px;')
+              label(for='searchPaciente') Buscar por Paciente:
+              select(id='searchPaciente' name='searchPaciente')
+                option(value='') Seleccionar paciente...
+              button.submit-button(onclick='getTurnosByPaciente()') Buscar
+            .form-group(style='margin-top: 20px;')
+              label(for='searchMedico') Buscar por Médico:
+              select(id='searchMedico' name='searchMedico')
+                option(value='') Seleccionar médico...
+              button.submit-button(onclick='getTurnosByMedico()') Buscar
+          else
+            p.page-sub Tus turnos se mostrarán automáticamente abajo.
           .result#read-result
         
         // Formulario Modificar Turno (CAMBIADO POR EL MERGE)
@@ -375,6 +396,8 @@ html(lang='es')
     script.
       let pacientes = [];
       let medicos = [];
+      const currentUserRole = '#{user ? user.role : ''}';
+      const currentPacienteId = '#{user && user.pacienteId ? user.pacienteId : ''}';
 
       // Cargar datos iniciales
       window.onload = function() {
@@ -383,6 +406,10 @@ html(lang='es')
         setMinDateTime();
         loadTurnosDropdown('updateTurnoSelect');
         loadTurnosDropdown('deleteTurnoSelect');
+        if (currentUserRole === 'Paciente' && currentPacienteId) {
+          showForm('read');
+          getTurnosByPacienteId(currentPacienteId);
+        }
       };
 
       function formatDate(dateString) {
@@ -649,6 +676,30 @@ html(lang='es')
         }
       }
 
+      async function getTurnosByPacienteId(idPaciente) {
+        try {
+          const response = await fetch(`/api/turnos/paciente/${idPaciente}`);
+          const result = await response.json();
+          if (response.ok) {
+            const paciente = pacientes.find(p => (p._id || p.IdPaciente) == idPaciente);
+            let html = `<h4><i class="fas fa-user-injured"></i> Mis Turnos${paciente ? ' (' + paciente.Nombre + ' ' + paciente.Apellido + ')' : ''}:</h4>`;
+            if (result.data.length === 0) {
+              html += '<p>No hay turnos para tu cuenta.</p>';
+            }
+            result.data.forEach(turno => {
+              const medico = medicos.find(m => (m._id || m.IdMedico) == turno.IdMedico);
+              const id = turno._id || turno.IdTurno;
+              html += `<p><strong>ID:</strong> ${id} | <strong>Fecha:</strong> ${formatDate(turno.Fecha)} | <strong>Hora:</strong> ${turno.HoraInicio}-${turno.HoraFin} | <strong>Médico:</strong> ${medico ? medico.Nombre + ' ' + medico.Apellido : 'N/A'}</p>`;
+            });
+            showResult('read-result', html, true);
+          } else {
+            showResult('read-result', `Error: ${result.message}`, false);
+          }
+        } catch (error) {
+          showResult('read-result', `Error de conexión: ${error.message}`, false);
+        }
+      }
+
       async function getTurnosByMedico() {
         const idMedico = document.getElementById('searchMedico').value;
         if (!idMedico) {
@@ -761,5 +812,21 @@ html(lang='es')
           }
         } catch (error) {
           showResult('delete-result', `Error de conexión: ${error.message}`, false);
+        }
+      }
+
+    script.
+      async function logout(){
+        try {
+          const response = await fetch('/api/auth/logout', { method: 'POST' });
+          const data = await response.json();
+          if (response.ok) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login';
+          } else {
+            alert(data.message || 'Error al cerrar sesión');
+          }
+        } catch (e) {
+          alert('Error de conexión: ' + e.message);
         }
       }

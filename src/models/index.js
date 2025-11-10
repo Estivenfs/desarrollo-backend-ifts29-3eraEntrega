@@ -73,14 +73,25 @@ const turnoSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// --- Esquema de Usuario ---
+const usuarioSchema = new mongoose.Schema({
+    Username: { type: String, required: true, unique: true, trim: true },
+    PasswordHash: { type: String, required: true },
+    Role: { type: String, required: true, enum: ['Administrativo', 'Medico', 'Paciente'] },
+    MedicoRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Medico', default: null },
+    PacienteRef: { type: mongoose.Schema.Types.ObjectId, ref: 'Paciente', default: null }
+}, { timestamps: true });
+
 // Crear los modelos
 export const Paciente = mongoose.model('Paciente', pacienteSchema);
 export const Medico = mongoose.model('Medico', medicoSchema);
 export const Turno = mongoose.model('Turno', turnoSchema);
+export const Usuario = mongoose.model('Usuario', usuarioSchema);
 
 // Mapeo para facilitar el acceso en el servicio
 export const Models = {
     pacientes: Paciente,
     medicos: Medico,
     turnos: Turno,
+    usuarios: Usuario,
 };

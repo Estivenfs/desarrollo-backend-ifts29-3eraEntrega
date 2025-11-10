@@ -3,16 +3,18 @@ import express from 'express';
 import pacienteRoutes from './pacienteRoutes.js';
 import medicoRoutes from './medicoRoutes.js';
 import turnoRoutes from './turnoRoutes.js';
+import authRoutes from './authRoutes.js';
 
 import Paciente from '../models/Paciente.js';
 import Medico from '../models/Medico.js';
 import Turno from '../models/Turno.js';
 import DatabaseService from '../models/DatabaseService.js';
+import { requireAuthView } from '../middleware/index.js';
 
 const router = express.Router();
 
 // 🟢 Dashboard principal con datos reales desde DatabaseService
-router.get('/', async (req, res) => {
+router.get('/', requireAuthView, async (req, res) => {
   try {
     const turnos = await Turno.getTurnosCompletos();
     const pacientes = await Paciente.getAll();
@@ -46,7 +48,8 @@ router.get('/', async (req, res) => {
         turnos: turnos.length,
         pacientes: pacientes.length,
         medicos: medicos.length
-      }
+      },
+      user: req.session?.user || null
     });
   } catch (error) {
     console.error('Error cargando datos del dashboard:', error);
@@ -56,22 +59,35 @@ router.get('/', async (req, res) => {
       pacientes: [],
       medicos: [],
       metrics: { turnos: 0, pacientes: 0, medicos: 0 },
-      error: 'Error al obtener datos de la base de datos'
+      error: 'Error al obtener datos de la base de datos',
+      user: req.session?.user || null
     });
   }
 });
 
 // 🩺 Rutas para vistas individuales
-router.get('/pacientes', (req, res) => {
-  res.render('pacientes', { title: 'Gestión de Pacientes' });
+router.get('/pacientes', requireAuthView, (req, res) => {
+  res.render('pacientes', { title: 'Gestión de Pacientes', user: req.session?.user || null });
 });
 
-router.get('/medicos', (req, res) => {
-  res.render('medicos', { title: 'Gestión de Médicos' });
+router.get('/medicos', requireAuthView, (req, res) => {
+  res.render('medicos', { title: 'Gestión de Médicos', user: req.session?.user || null });
 });
 
-router.get('/turnos', (req, res) => {
-  res.render('turnos', { title: 'Gestión de Turnos' });
+router.get('/turnos', requireAuthView, (req, res) => {
+  res.render('turnos', { title: 'Gestión de Turnos', user: req.session?.user || null });
+});
+
+// Página de Login
+router.get('/login', (req, res) => {
+  const user = req.session?.user || null;
+  if (user) {
+    // Redirección por rol si ya está autenticado
+    if (user.role === 'Administrativo') return res.redirect('/');
+    if (user.role === 'Medico') return res.redirect('/pacientes');
+    if (user.role === 'Paciente') return res.redirect('/turnos');
+  }
+  res.render('login', { title: 'Iniciar Sesión', user: null });
 });
 
 // 🧠 Estado de la API
@@ -94,5 +110,6 @@ router.get('/api/status', (req, res) => {
 router.use('/api/pacientes', pacienteRoutes);
 router.use('/api/medicos', medicoRoutes);
 router.use('/api/turnos', turnoRoutes);
+router.use('/api/auth', authRoutes);
 
 export default router;

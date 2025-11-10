@@ -1,0 +1,117 @@
+doctype html
+html(lang='es')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= title
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap')
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css')
+    style.
+      body {
+        font-family: 'Inter', sans-serif;
+        margin: 0;
+        padding: 24px;
+        background: linear-gradient(135deg, #f6fbff, #e9f6ff);
+        color: #0f4c81;
+        display: flex;
+        min-height: 100vh;
+        align-items: center;
+        justify-content: center;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 420px;
+        background: rgba(255,255,255,0.85);
+        padding: 28px;
+        border-radius: 16px;
+        box-shadow: 0 14px 40px rgba(2,6,23,0.12);
+      }
+      .login-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: linear-gradient(135deg,#0b74b6,#0b4fa0);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        font-weight:700;
+        color: #fff;
+      }
+      .page-sub { margin: 0; color: #5b7f98; }
+      .form-group { margin-bottom: 14px; }
+      .form-group label { display:block; margin-bottom:6px; font-weight:600; }
+      .form-group input { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius:8px; font-size: 16px; }
+      .form-group input:focus { outline:none; border-color:#0b74b6; box-shadow:0 0 0 3px rgba(11, 116, 182, 0.1); }
+      .submit-button { width:100%; background:#0b74b6; color:white; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
+      .submit-button:hover { background:#0b4fa0; }
+      .result { margin-top: 12px; display:none; padding: 12px; border-radius:8px; }
+      .result.success { background:#f0fff4; border-left:4px solid #48bb78; color:#2f855a; display:block; }
+      .result.error { background:#fed7d7; border-left:4px solid #f56565; color:#c53030; display:block; }
+
+  body
+    .login-card
+      .login-header
+        .logo SI
+        .title-block
+          h1 Iniciar Sesión
+          p.page-sub Clínica Salud Integral
+      form(id='login-form')
+        .form-group
+          label(for='username') Usuario
+          input(type='text', id='username', name='username', required)
+        .form-group
+          label(for='password') Contraseña
+          input(type='password', id='password', name='password', required)
+        button.submit-button(type='submit')
+          i.fas.fa-sign-in-alt
+          | Entrar
+      .result#login-result
+    script.
+      const form = document.getElementById('login-form');
+      const result = document.getElementById('login-result');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        result.className = 'result';
+        result.textContent = '';
+        const formData = new FormData(form);
+        const payload = {
+          username: formData.get('username'),
+          password: formData.get('password')
+        };
+        try {
+          const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await response.json();
+          if (response.ok && data.success) {
+            // Guardar token en localStorage (opcional) para usar en API JWT
+            if (data.token) localStorage.setItem('authToken', data.token);
+            // Redirección según rol
+            const role = data.data.role;
+            if (role === 'Administrativo') {
+              window.location.href = '/';
+            } else if (role === 'Medico') {
+              window.location.href = '/pacientes';
+            } else if (role === 'Paciente') {
+              window.location.href = '/turnos';
+            } else {
+              window.location.href = '/';
+            }
+          } else {
+            result.classList.add('error');
+            result.textContent = data.message || 'Error de inicio de sesión';
+          }
+        } catch (error) {
+          result.classList.add('error');
+          result.textContent = 'Error de conexión: ' + error.message;
+        }
+      });

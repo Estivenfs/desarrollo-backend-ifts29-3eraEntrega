@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 dotenv.config();
 import connectDB from './config/db.js';
+import session from 'express-session';
 
 
 // Importar middleware personalizado
@@ -30,6 +31,16 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json()); // Parser para JSON
 app.use(express.urlencoded({ extended: true })); // Parser para formularios
 app.use(express.static(path.join(__dirname, 'public'))); // Archivos estáticos
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev_session_secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: false, // Cambiar a true si se usa HTTPS
+    maxAge: 1000 * 60 * 60 // 1 hora
+  }
+}));
 
 // Middleware personalizado
 app.use(requestLogger); // Logging de requests

@@ -237,39 +237,54 @@ html(lang='es')
       nav
         a(href='/' title='Inicio')
           i.fas.fa-house
-        a(href='/pacientes' title='Pacientes')
-          i.fas.fa-user-injured
-        a(href='/medicos' title='Médicos')
-          i.fas.fa-user-md
-        a(href='/turnos' title='Turnos')
-          i.fas.fa-calendar-check
+        if !user || user.role === 'Administrativo'
+          a(href='/pacientes' title='Pacientes')
+            i.fas.fa-user-injured
+          a(href='/medicos' title='Médicos')
+            i.fas.fa-user-md
+          a(href='/turnos' title='Turnos')
+            i.fas.fa-calendar-check
+        else if user && user.role === 'Medico'
+          a(href='/pacientes' title='Pacientes')
+            i.fas.fa-user-injured
+        else if user && user.role === 'Paciente'
+          a(href='/turnos' title='Turnos')
+            i.fas.fa-calendar-check
 
     .main
       .container
         // --- Cabecera con ícono ---
         .header-left
           i.fas.fa-user-injured
-          div
-            h1.page-title Gestión de Pacientes
-            p.page-sub Desarrollo Backend - Grupo 4
-        
+          h1.page-title Gestión de Pacientes
+          p.page-sub Desarrollo Backend - Grupo 4
+          if user
+            p.page-sub Bienvenido, #{user.username} · Rol: #{user.role}
+            a(href='#', onclick='logout()') Cerrar sesión
+          else
+            a(href='/login') Iniciar sesión
+
         // --- Contenido de la página de Pacientes con íconos ---
         .actions
-          a.action-button.create(href='#' onclick='showForm("create")')
-            i.icon.fas.fa-plus-circle
-            | Crear Paciente
-          
-          a.action-button.read(href='#' onclick='showForm("read")')
-            i.icon.fas.fa-search
-            | Consultar Pacientes
-          
-          a.action-button.update(href='#' onclick='showForm("update")')
-            i.icon.fas.fa-edit
-            | Modificar Paciente
-          
-          a.action-button.delete(href='#' onclick='showForm("delete")')
-            i.icon.fas.fa-trash-alt
-            | Eliminar Paciente
+          if user && user.role === 'Administrativo'
+            a.action-button.create(href='#' onclick='showForm("create")')
+              i.icon.fas.fa-plus-circle
+              | Crear Paciente
+            a.action-button.read(href='#' onclick='showForm("read")')
+              i.icon.fas.fa-search
+              | Consultar Pacientes
+            a.action-button.update(href='#' onclick='showForm("update")')
+              i.icon.fas.fa-edit
+              | Modificar Paciente
+            a.action-button.delete(href='#' onclick='showForm("delete")')
+              i.icon.fas.fa-trash-alt
+              | Eliminar Paciente
+          else if user && user.role === 'Medico'
+            a.action-button.read(href='#' onclick='showForm("read")')
+              i.icon.fas.fa-search
+              | Consultar Pacientes
+          else if user && user.role === 'Paciente'
+            p.page-sub Solo personal administrativo puede gestionar pacientes.
         
         // Formulario Crear Paciente
         .form-section#create-form
@@ -600,5 +615,21 @@ html(lang='es')
           }
         } catch (error) {
           showResult('delete-result', `Error de conexión: ${error.message}`, false);
+        }
+      }
+
+    script.
+      async function logout(){
+        try {
+          const response = await fetch('/api/auth/logout', { method: 'POST' });
+          const data = await response.json();
+          if (response.ok) {
+            localStorage.removeItem('authToken');
+            window.location.href = '/login';
+          } else {
+            alert(data.message || 'Error al cerrar sesión');
+          }
+        } catch (e) {
+          alert('Error de conexión: ' + e.message);
         }
       }
