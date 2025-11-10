@@ -78,6 +78,13 @@ router.get('/turnos', requireAuthView, (req, res) => {
   res.render('turnos', { title: 'Gestión de Turnos', user: req.session?.user || null });
 });
 
+router.get('/usuarios', requireAuthView, (req, res) => {
+  const user = req.session?.user || null;
+  if (!user || user.role !== 'Administrativo') {
+    return res.redirect('/');
+  }
+  res.render('usuarios', { title: 'Gestión de Usuarios', user });
+});
 // Página de Login
 router.get('/login', (req, res) => {
   const user = req.session?.user || null;

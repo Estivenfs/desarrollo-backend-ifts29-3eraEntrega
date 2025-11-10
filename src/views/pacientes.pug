@@ -244,6 +244,9 @@ html(lang='es')
             i.fas.fa-user-md
           a(href='/turnos' title='Turnos')
             i.fas.fa-calendar-check
+        if user && user.role === 'Administrativo'
+          a(href='/usuarios' title='Usuarios')
+            i.fas.fa-users-cog
         else if user && user.role === 'Medico'
           a(href='/pacientes' title='Pacientes')
             i.fas.fa-user-injured
