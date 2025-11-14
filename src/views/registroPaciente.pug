@@ -1,0 +1,124 @@
+doctype html
+html(lang='es')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= title
+    link(rel='stylesheet', href='https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap')
+    link(rel='stylesheet', href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css')
+    style.
+      body { font-family:'Inter',sans-serif; margin:0; padding:24px; background:linear-gradient(135deg,#f6fbff,#e9f6ff); color:#0f4c81; display:flex; min-height:100vh; align-items:center; justify-content:center; }
+      .card { width:100%; max-width:720px; background:rgba(255,255,255,0.88); padding:24px; border-radius:16px; box-shadow:0 14px 40px rgba(2,6,23,0.12); }
+      .header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+      .logo { width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#0b74b6,#0b4fa0); display:flex; align-items:center; justify-content:center; font-weight:700; color:#fff; }
+      .page-sub { margin:0; color:#5b7f98; }
+      .grid { display:grid; grid-template-columns:1fr 1fr; column-gap:28px; row-gap:16px; }
+      .form-group { margin-bottom:14px; min-width:0; }
+      .form-group label { display:block; margin-bottom:8px; font-weight:600; }
+      .form-group input, .form-group select { width:100%; padding:10px; border:1px solid #cbd5e0; border-radius:8px; font-size:16px; box-sizing:border-box; }
+      .form-group input:focus, .form-group select:focus { outline:none; border-color:#0b74b6; box-shadow:0 0 0 2px rgba(11,116,182,0.12); }
+      .submit-button { width:100%; background:#0b74b6; color:#fff; padding:12px; border:none; border-radius:8px; font-size:16px; cursor:pointer; margin-top:10px; }
+      .submit-button:hover { background:#0b4fa0; }
+      .result { margin-top:12px; display:none; padding:12px; border-radius:8px; }
+      .result.success { background:#f0fff4; border-left:4px solid #48bb78; color:#2f855a; display:block; }
+      .result.error { background:#fed7d7; border-left:4px solid #f56565; color:#c53030; display:block; }
+      .actions { display:flex; gap:12px; margin-top:12px; }
+      .google { background:#fff; color:#0f4c81; border:1px solid #cbd5e0; }
+      .google i { color:#db4437; }
+      .login-link { text-align:center; margin-top:10px; }
+      @media (max-width: 768px) {
+        .grid { grid-template-columns: 1fr; gap:16px; }
+      }
+  body
+    .card
+      .header
+        .logo SI
+        .title
+          h1 Registro de Paciente
+          p.page-sub Completa tus datos para crear tu cuenta de paciente
+      if googleEmail
+        .result.success
+          i.fas.fa-info-circle
+          | Hemos recibido tu correo de Google: #{googleEmail}. Completa tus datos para finalizar el registro.
+      form#registro-form
+        .grid
+          .form-group
+            label(for='username') Email (usuario)
+            input(type='email', id='username', name='username', required, value=googleEmail)
+          .form-group
+            label(for='password') Contraseña
+            input(type='password', id='password', name='password', placeholder='(Opcional si registras con Google)')
+          .form-group
+            label(for='DNI') DNI
+            input(type='text', id='DNI', name='DNI', required)
+          .form-group
+            label(for='Nombre') Nombre
+            input(type='text', id='Nombre', name='Nombre', required)
+          .form-group
+            label(for='Apellido') Apellido
+            input(type='text', id='Apellido', name='Apellido', required)
+          .form-group
+            label(for='Edad') Edad
+            input(type='number', id='Edad', name='Edad', min='0', required)
+          .form-group
+             label(for='Sexo') Sexo
+             select(id='Sexo', name='Sexo', required)
+               option(value='') Selecciona...
+               option(value='F') Femenino
+               option(value='M') Masculino
+          .form-group
+            label(for='ObraSocial') Obra Social
+            input(type='text', id='ObraSocial', name='ObraSocial', required)
+          .form-group
+            label(for='NroAfiliado') Nro. Afiliado
+            input(type='text', id='NroAfiliado', name='NroAfiliado', required)
+        button.submit-button(type='submit')
+          i.fas.fa-user-plus
+          | Crear cuenta de paciente
+      .result#registro-result
+      .actions
+        a.google.button(href='/api/auth/google')
+          i.fab.fa-google
+          | Continuar con Google
+        a.button(href='/login')
+          i.fas.fa-sign-in-alt
+          | Ir a Iniciar Sesión
+    script.
+      const form = document.getElementById('registro-form');
+      const result = document.getElementById('registro-result');
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        result.className = 'result';
+        result.textContent = '';
+        const fd = new FormData(form);
+        const payload = {
+          username: fd.get('username'),
+          password: fd.get('password'),
+          DNI: fd.get('DNI'),
+          Nombre: fd.get('Nombre'),
+          Apellido: fd.get('Apellido'),
+          Edad: Number(fd.get('Edad')),
+          Sexo: fd.get('Sexo'),
+          ObraSocial: fd.get('ObraSocial'),
+          NroAfiliado: fd.get('NroAfiliado')
+        };
+        try {
+          const resp = await fetch('/api/auth/register-paciente-public', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await resp.json();
+          if (resp.ok && data.success) {
+            result.classList.add('success');
+            result.textContent = 'Registro exitoso. Ahora puedes iniciar sesión como Paciente.';
+            setTimeout(() => { window.location.href = '/login'; }, 1500);
+          } else {
+            result.classList.add('error');
+            result.textContent = data.message || 'Error en el registro';
+          }
+        } catch (err) {
+          result.classList.add('error');
+          result.textContent = 'Error de conexión: ' + err.message;
+        }
+      });

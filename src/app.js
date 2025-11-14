@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import connectDB from './config/db.js';
 import session from 'express-session';
+import passport from 'passport';
 
 
 // Importar middleware personalizado
@@ -41,6 +42,9 @@ app.use(session({
     maxAge: 1000 * 60 * 60 // 1 hora
   }
 }));
+
+// Inicializar Passport (para Google OAuth)
+app.use(passport.initialize());
 
 // Middleware personalizado
 app.use(requestLogger); // Logging de requests

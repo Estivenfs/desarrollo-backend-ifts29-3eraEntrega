@@ -71,6 +71,13 @@ html(lang='es')
         button.submit-button(type='submit')
           i.fas.fa-sign-in-alt
           | Entrar
+      .actions(style='display:flex; gap:12px; margin-top:12px;')
+        a(href='/api/auth/google', style='flex:1; text-align:center; background:#fff; border:1px solid #cbd5e0; padding:10px; border-radius:8px; text-decoration:none; color:#0f4c81;')
+          i.fab.fa-google(style='color:#db4437;')
+          |  Ingresar con Google (Pacientes)
+        a(href='/registro/paciente', style='flex:1; text-align:center; background:#0b74b6; color:#fff; padding:10px; border-radius:8px; text-decoration:none;')
+          i.fas.fa-user-plus
+          |  Registrarme como Paciente
       .result#login-result
     script.
       const form = document.getElementById('login-form');

@@ -86,6 +86,69 @@ const authController = {
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error interno del servidor' });
     }
+  },
+  async registerPacientePublic(req, res) {
+    try {
+      const { username, password, googleEmail, DNI, Nombre, Apellido, Edad, Sexo, ObraSocial, NroAfiliado } = req.body;
+      const email = username || googleEmail;
+      if (!email) {
+        return res.status(400).json({ success: false, message: 'Email de usuario (username) es requerido' });
+      }
+      // Validar datos de paciente
+      const missing = [];
+      if (!DNI) missing.push('DNI');
+      if (!Nombre) missing.push('Nombre');
+      if (!Apellido) missing.push('Apellido');
+      if (Edad === undefined || Edad === null) missing.push('Edad');
+      if (!Sexo) missing.push('Sexo');
+      if (!ObraSocial) missing.push('ObraSocial');
+      if (!NroAfiliado) missing.push('NroAfiliado');
+      if (missing.length) {
+        return res.status(400).json({ success: false, message: `Faltan campos de paciente: ${missing.join(', ')}` });
+      }
+
+      // Verificar usuario existente
+      const existingUser = await Models['usuarios'].findOne({ Username: email });
+      if (existingUser) {
+        return res.status(409).json({ success: false, message: 'El usuario ya existe' });
+      }
+
+      // Crear paciente primero
+      const nuevoPaciente = await Models['pacientes'].create({ DNI, Nombre, Apellido, Edad, Sexo, ObraSocial, NroAfiliado });
+
+      // Preparar contraseña (si viene de Google y no hay password, generar una aleatoria)
+      let passwordToHash = password;
+      if (!passwordToHash) {
+        // Generar un password aleatorio para cuentas que usarán solo Google
+        passwordToHash = Math.random().toString(36).slice(-12);
+      }
+      const passwordHash = await bcrypt.hash(passwordToHash, 10);
+
+      const newUser = await Models['usuarios'].create({
+        Username: email,
+        PasswordHash: passwordHash,
+        Role: 'Paciente',
+        PacienteRef: nuevoPaciente._id,
+        MedicoRef: null
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Paciente y usuario creados correctamente',
+        data: {
+          usuario: { id: newUser._id, username: newUser.Username, role: newUser.Role },
+          paciente: { id: nuevoPaciente._id, DNI: nuevoPaciente.DNI, Nombre: nuevoPaciente.Nombre, Apellido: nuevoPaciente.Apellido }
+        }
+      });
+    } catch (error) {
+      console.error('Error en registro público de paciente:', error);
+      // Manejo de errores comunes
+      if (error.code === 11000) {
+        // Claves duplicadas (ej.: DNI único)
+        return res.status(409).json({ success: false, message: 'DNI de paciente ya existe' });
+      }
+      return res.status(500).json({ success: false, message: 'Error interno del servidor' });
+    }
   }
 };
 
