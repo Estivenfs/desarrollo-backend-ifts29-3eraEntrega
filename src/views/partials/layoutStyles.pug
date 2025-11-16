@@ -46,11 +46,17 @@ style.
     color: rgba(255,255,255,0.9);
     text-decoration: none;
     font-size: 1.2em;
-    transition: transform .18s ease, box-shadow .18s ease;
+    transition: transform .18s ease, box-shadow .18s ease, background-color .18s ease;
   }
   .sidebar nav a:hover {
     transform: translateY(-6px);
     box-shadow: 0 10px 26px rgba(4,30,60,0.28);
+  }
+
+  .sidebar nav a.active {
+    background: rgba(11, 116, 182, 0.25);
+    box-shadow: 0 0 15px rgba(11, 116, 182, 0.3);
+    color: #fff;
   }
 
   .main {

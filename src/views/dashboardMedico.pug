@@ -20,7 +20,7 @@ html(lang='es')
       li { background: linear-gradient(180deg, #ffffff, #fbfdff); border-radius: 10px; margin-bottom: 10px; padding: 10px 12px; border: 1px solid rgba(10,60,100,0.03); }
   body
     include partials/sidebar.pug
-    +sidebar(user)
+    +sidebar(user, 'inicio')
     .main
       .container
         +pageHeader(user, 'Dashboard Médico', 'Mis turnos programados')
